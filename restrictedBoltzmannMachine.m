@@ -32,6 +32,8 @@ classdef restrictedBoltzmannMachine
         visibleStates;          %visible layer states
         hiddenStates;           %hidden layer states
         error;                  %error
+
+    %end of properties
     end
     
     methods
@@ -56,6 +58,7 @@ classdef restrictedBoltzmannMachine
             self.dVisibleBiases = zeros(1,numVisible);
             self.hiddenBiases = 0.01*randn(1,numHidden);
             self.dHiddenBiases = zeros(1,numHidden);
+
         end
         
         function probabilities = sigmoid(self,activations)
@@ -66,6 +69,7 @@ classdef restrictedBoltzmannMachine
         %   probabilities - activation probabilities according to sigmoid function
 
             probabilities = 1./(1+exp(-activations));
+
         end
         
         function self = train(self,data)
@@ -89,24 +93,31 @@ classdef restrictedBoltzmannMachine
             
             %Ierate for specified epochs
             for epoch=1:self.numEpochs
+
                 %Negative phase - sample hidden from visible
                 self = self.sampleHidden();
                 self.positiveAssociations = self.data' * self.hiddenProbs;
                 self.hiddenProbsPos = self.hiddenProbs;
+
                 %Contrastive divergence step
                 for k = 1:1:self.cdk
+
                     %Positive phase - sample visible from hidden
                     self.phase = true;
                     self = self.sampleVisible();
                     self = self.sampleHidden();
                 end
+
                 self.phase = false;
                 self.negativeAssociations = self.visibleProbs' * self.hiddenProbs;
                 self.hiddenProbsNeg = self.hiddenProbs;
+
                 %Update weights and biases to learn parameters
                 self = self.updateWeightsAndBiases();
+
                 %Display current progress
                 fprintf('Epoch: %d | Error = %.10f \n', epoch, self.error);
+
                 %Show weights in tiled grid of images
                 tiledWeights = showWeights(self,[10 10],[28 28]);
                 imshow(tiledWeights, []), title('Weights');
@@ -129,11 +140,13 @@ classdef restrictedBoltzmannMachine
             if ~self.phase
                 hiddenActivations = self.data * self.weights;
                 self.hiddenActivations = bsxfun(@plus,hiddenActivations,self.hiddenBiases);
+
             %Positive phase
             else
                 hiddenActivations = self.visibleProbs * self.weights;
                 self.hiddenActivations=bsxfun(@plus,hiddenActivations,self.hiddenBiases);
             end
+
             %Set hidden probabilities and states
             self.hiddenProbs = self.sigmoid(self.hiddenActivations);
             self.hiddenStates = self.hiddenProbs > rand(size(self.hiddenProbs));
@@ -144,8 +157,11 @@ classdef restrictedBoltzmannMachine
 
             visibleActivations = self.hiddenStates * transpose(self.weights);
             self.visibleActivations = bsxfun(@plus,visibleActivations,self.visibleBiases);
+            
+            %Set visible probabilities and states
             self.visibleProbs = self.sigmoid(self.visibleActivations);
             self.visibleStates = self.visibleProbs > rand(size(self.visibleProbs));
+        
         end
         
         function self = updateWeightsAndBiases(self)
@@ -165,6 +181,7 @@ classdef restrictedBoltzmannMachine
             %update hidden biases
             self.dHiddenBiases = self.learningRate * mean(self.hiddenProbsPos - self.hiddenProbsNeg);
             self.hiddenBiases = self.hiddenBiases + self.dHiddenBiases;
+        
         end
         
         function tiledWeightImage = showWeights(self, weightGridSize, weightImageShape)
@@ -175,14 +192,19 @@ classdef restrictedBoltzmannMachine
         %OUTPUT
         %   tiledWeightImage - tiled images of weights arranged in a grid
 
-            %Initialise image
+            %Image will contain weightGridSize(1) by weightGridSize(2) weight tiles, each containing a subimage of size weightImageShape(1) by weightImageShape(2)
             tiledWeightImage = zeros(weightGridSize(1)*weightImageShape(1) + weightGridSize(1) + 1,weightGridSize(2)*weightImageShape(2) + weightGridSize(2) + 1);
+        
+            %Iterate over all subimages
             for i = 1:weightGridSize(1)
                 for j = 1:weightGridSize(2)
+        
+                    %Calculate weight indices
                     weightIndex = (i - 1)*weightGridSize(2) + j;
                     weightImage = self.weights(:, weightIndex);
                     weightImage = reshape(weightImage, weightImageShape);
                     
+                    %Calculate tile indices
                     rows = weightImageShape(1)*(i - 1) + i + 1;
                     rowe = rows + weightImageShape(1) - 1;
                     cols = weightImageShape(2)*(j - 1) + j + 1;
@@ -191,16 +213,24 @@ classdef restrictedBoltzmannMachine
                     tiledWeightImage(rows:rowe, cols:cole) = weightImage;
                 end
             end
+        
+            %Normalise tiled image
             tiledWeightImage = (tiledWeightImage - min(tiledWeightImage(:)))/(max(tiledWeightImage(:)) - min(tiledWeightImage(:)));
-            tiledWeightImage(1:weightImageShape(1)+1:end, :) = 1;
-            tiledWeightImage(:, 1:weightImageShape(2)+1:end) = 1;
+            % tiledWeightImage(1:weightImageShape(1)+1:end, :) = 1;
+            % tiledWeightImage(:, 1:weightImageShape(2)+1:end) = 1;
+        
         end
         
         function print(self)
+            %function to print details of restrictedBoltzmannMachine class
+        
             properties(self)
             methods(self)
-        end
         
+        end
+       
+    %end of methods 
     end
-    
+
+%end of class definition    
 end
