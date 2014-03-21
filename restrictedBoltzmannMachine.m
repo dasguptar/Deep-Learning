@@ -216,9 +216,7 @@ classdef restrictedBoltzmannMachine
         
             %Normalise tiled image
             tiledWeightImage = (tiledWeightImage - min(tiledWeightImage(:)))/(max(tiledWeightImage(:)) - min(tiledWeightImage(:)));
-            % tiledWeightImage(1:weightImageShape(1)+1:end, :) = 1;
-            % tiledWeightImage(:, 1:weightImageShape(2)+1:end) = 1;
-        
+                    
         end
         
         function print(self)
